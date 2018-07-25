@@ -1,0 +1,15 @@
+#binary file
+*.bin
+
+#object file
+*.o
+
+#debug compiler
+dcompile.sh
+
+#minified control page
+res/index.html
+res/readme.html
+
+src/Resources.h
+ssl/*

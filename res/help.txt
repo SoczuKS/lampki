@@ -1,0 +1,13 @@
+Morele LED Server (v1)
+authors:
+  Rafał Pokrywka (rav_kr@interia.pl)
+  Krzysztof Soczyński (soczynskik@gmail.com)
+
+usage: moreleled [options]
+  options:
+    -h, --help      | Show this message
+    -v, --verbose   | Server will write everything to the terminal
+    -i, --install   | Install as system service
+    -u, --uninstall | Uninstall system service
+    --kill          | Kill background process
+

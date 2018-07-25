@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Led control</title>
+		<style type="text/css" media="screen">
+			body {
+				background-color: #555;
+			}
+			.top {
+				margin: 20px auto;
+				width: 600px;
+				background-color: #222;
+			}
+
+			#controller {
+				padding: 30px;
+			}
+
+			.diode_red { background-color: red; opacity: 0.3; }
+			.diode_blue { background-color: blue; opacity: 0.3; }
+			.diode_yellow { background-color: yellow; opacity: 0.3; }
+			.diode_green { background-color: lime; opacity: 0.3; }
+			.diode_white { background-color: white; opacity: 0.3; }
+
+			.diode_on.diode_red { opacity: 1; }
+			.diode_on.diode_blue { opacity: 1; }
+			.diode_on.diode_yellow { opacity: 1; }
+			.diode_on.diode_green { opacity: 1; }
+			.diode_on.diode_white { opacity: 1; }
+
+			table {
+				margin: auto;
+				display: inline-block;
+				background-color: black;
+			}
+
+			table, td {
+				border: 2px solid white;
+				border-collapse: collapse;
+			}
+
+			td {
+				color: white;
+				background-color: black;
+				width: 40px;
+				height: 40px;
+			}
+			#controller {
+				display: flex;
+				justify-content: space-around;
+			}
+		</style>
+		<script type="text/javascript">
+			"use strict";
+			var API_ADDRESS = "/";
+
+			function getJSON(url, callback) {
+				var xmlHttp = new XMLHttpRequest();
+				xmlHttp.onreadystatechange = function() {
+					if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+						console.log(xmlHttp.responseText);
+						if (typeof callback === "function") {
+							callback(JSON.parse(xmlHttp.responseText));
+						}
+					}
+				};
+				xmlHttp.open("GET", API_ADDRESS + url, true);
+				xmlHttp.send(null);
+			}
+
+			var ledController = function(baseUrl) {
+				var requests = [];
+				var buffer = "";
+				this.settings = {sektory: 0, kolory: 0};
+				this.loadState = () => {
+					getJSON("state", (response) => {
+						this.settings = response.settings;
+
+						var colors = ["red", "blue", "yellow", "green", "white"];
+						var div = document.getElementById("controller_diodes");
+						div.innerHTML = "";
+
+						var table = document.createElement('table'),
+							tbody = document.createElement('tbody');
+
+						table.appendChild(tbody);
+
+						for (var x = 0; x < this.settings.sektory; x++) {
+							tbody.insertRow(x);
+							for (var y = 0; y < this.settings.kolory; y++) {
+								tbody.rows[x].insertCell(y);
+								tbody.rows[x].cells[y].classList.add("diode_" + colors[y]);
+								tbody.rows[x].cells[y].id = 'diode_' + x + '_' + y;
+								tbody.rows[x].cells[y].onclick = (e) => {
+									controller.setLED(e.target.parentElement.rowIndex, e.target.cellIndex, (e.target.classList.contains('diode_on')?0:1));
+								};
+							}
+						}
+
+						div.appendChild(table);
+
+						response.leds.forEach((diode) => {
+							console.log(diode);
+							document.getElementById('diode_' + diode.sektor + '_' + diode.kolor).classList.add("diode_on");
+						});
+					});
+				};
+				this.update = () => {
+					if (requests.length == 0) return;
+					var toSend = requests.map((r) => {
+						return (r.x + "_" + r.y + "_" + r.z);
+					}).join("&");
+					getJSON(toSend, (response) => {
+						response.good.forEach((diode) => {
+							if (diode.stan === 1) {
+								document.getElementById('diode_' + diode.sektor + '_' + diode.kolor).classList.add("diode_on");
+							} else {
+								document.getElementById('diode_' + diode.sektor + '_' + diode.kolor).classList.remove("diode_on");
+							}
+						});
+					});
+					requests = [];
+				};
+				this.setLED = (x, y, z) => { requests.push({x: x, y: y, z: z}); };
+				this.test = () => { getJSON("test"); };
+				this.resetDiodes = (x) => { 
+					if (x == undefined) {
+						getJSON("reset");
+					} else {
+						getJSON("reset/" + x);
+					}
+ 				};
+				this.police = () => { getJSON("997"); };
+				this.quit = () => { getJSON("quit"); };
+				this.randomize = () => { getJSON("rand"); };
+				this.xmas = () => { getJSON("xmas"); };
+			};
+
+			var controller = new ledController(API_ADDRESS);
+
+			window.onload = () => { controller.loadState(); };
+		</script>
+	</head>
+	<body>
+		<div class="top">
+			<div id="controller">
+				<div id="controller_actions">
+					<table>
+						<tr><td onclick="controller.update();">update</td></tr>
+						<tr><td onclick="controller.resetDiodes();">reset</td></tr>
+						<tr><td onclick="controller.loadState();">loadState</td></tr>
+						<tr><td onclick="controller.dump();">dump</td></tr>
+						<tr><td onclick="controller.dumpConsole();">console</td></tr>
+						<tr><td onclick="controller.test();">Test</td></tr>
+						<tr><td onclick="controller.randomize();">Rand</td></tr>
+						<tr><td onclick="controller.police();">997</td></tr>
+						<tr><td onclick="controller.xmas();">xmas</td></tr>
+						<tr><td onclick="controller.quit();">Quit</td></tr>
+					</table>
+				</div>
+				<div id="controller_diodes">
+					<table>
+						<tr>
+							<td onclick="controller.resetDiodes(0)">X</td>
+							<td onclick="controller.resetDiodes(1)">X</td>
+							<td onclick="controller.resetDiodes(2)">X</td>
+							<td onclick="controller.resetDiodes(3)">X</td>
+							<td onclick="controller.resetDiodes(4)">X</td>
+						</tr>
+					</table>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
